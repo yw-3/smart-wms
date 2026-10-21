@@ -13,6 +13,11 @@ import { toPgSql, isInsertStatement, hasReturning } from './sql.js';
 
 const { Pool } = pg;
 
+// int8/bigint（COUNT(*)、SUM 等聚合）默认被 pg 解析为字符串，
+// 与 SQLite 下返回数字的行为不一致，会导致 `=== 0` / `> 0` 等判断失效。
+// 统一按数字解析，使两种驱动行为一致。
+pg.types.setTypeParser(20, (v) => (v === null ? null : Number(v)));
+
 // 请求级连接作用域：withClient() 内可见
 const requestScope = new AsyncLocalStorage();
 

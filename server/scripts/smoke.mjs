@@ -222,6 +222,21 @@ let reqOrderNo = '';
 
 // 10. 清理测试数据
 await purgeTestData();
+// 10.1 通过 DB 直连彻底清理入库单/领料单/批次/库存/日志（API 只能作废，不能物理删除）
+try {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const { fileURLToPath } = await import('node:url');
+  const run = promisify(execFile);
+  const scriptPath = fileURLToPath(new URL('./purge-test-data.mjs', import.meta.url));
+  await run(process.execPath, [scriptPath], {
+    cwd: process.cwd(),
+    env: process.env,
+  });
+  console.log('  ✅ 测试单据/库存/日志已物理清理');
+} catch (e) {
+  console.log('  ⚠️  DB 级清理未执行：' + String(e.message).slice(0, 120));
+}
 {
   const mats = await api('/api/master/materials?q=SMOKE-TEST', { token });
   const locs = await api('/api/master/locations', { token });
