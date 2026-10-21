@@ -4,6 +4,9 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync } from 'fs';
 
+// 必须最先加载：后续所有模块读取 process.env 时才能拿到 .env 里的值
+import './env.js';
+
 import { initDb, db } from './db.js';
 import { seed } from './seed.js';
 import authRoutes from './routes/auth.js';
@@ -58,9 +61,18 @@ app.use('/api/bom', bomRoutes);
 app.use('/api/products', productRoutes);
 
 // 可选：同时托管已构建的前端（单机部署时一个服务搞定前后端）
+// 静态目录查找顺序：
+//   1. WEB_DIST_DIR 环境变量指定的绝对路径
+//   2. 发布构建目录 <root>/public        （.publish 布局：src/ + public/）
+//   3. 仓库布局 <root>/web/dist           （本地一体化部署）
 if (String(process.env.SERVE_WEB || '').toLowerCase() === 'true') {
-  const dist = join(__dirname, '..', '..', 'web', 'dist');
-  if (existsSync(dist)) {
+  const candidates = [
+    process.env.WEB_DIST_DIR,
+    join(__dirname, '..', 'public'),
+    join(__dirname, '..', '..', 'web', 'dist'),
+  ].filter(Boolean);
+  const dist = candidates.find((p) => existsSync(p));
+  if (dist) {
     app.use(express.static(dist));
     app.get(/^(?!\/api).*/, (req, res) => res.sendFile(join(dist, 'index.html')));
     console.log('[WMS] 已启用前端静态托管:', dist);

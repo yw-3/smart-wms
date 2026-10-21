@@ -42,3 +42,6 @@ wms-deploy.zip
 *.tsbuildinfo
 web/vite.config.js
 web/vite.config.d.ts
+
+# WorkBuddy 发布构建产物
+.publish/
