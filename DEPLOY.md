@@ -28,7 +28,7 @@
 
 **第 1 步 · 建库（3 分钟）**
 1. <https://supabase.com> → New project → 设数据库密码 → 记牢
-2. SQL Editor → New query → 粘贴 `server/schema.pg.sql` 全文 → **Run**（15 张表建好即可，重复执行安全）
+2. SQL Editor → New query → 粘贴 `server/schema.pg.sql` 全文 → **Run**（14 张表建好即可，重复执行安全）
 3. Project Settings → Database → Connection string → **URI** → 复制（形如 `postgresql://postgres.xxx:密码@aws-0-xxx.pool.supabase.com:5432/postgres`）
 
 **第 2 步 · 传代码（2 分钟）**
@@ -86,7 +86,7 @@ git push -u origin main
    - Region：选离你近的（Singapore / Tokyo）
 2. 等约 1 分钟建好，进入 **SQL Editor → New query**。
 3. 把仓库里的 `server/schema.pg.sql` **全文复制粘贴**进去 → 点 **Run**。
-   - 看到 15 张表创建成功即成功（重复执行也安全，全部 `IF NOT EXISTS`）。
+   - 看到 14 张表创建成功即成功（重复执行也安全，全部 `IF NOT EXISTS`）。
 4. 取连接串：**Project Settings → Database → Connection string → 选 URI**，形如：
 
 ```
