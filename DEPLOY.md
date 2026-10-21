@@ -165,6 +165,32 @@ postgresql://postgres.xxxxxxxxxxxxxx:你的密码@aws-0-ap-northeast-1.pool.supa
   建议在报表模块做「导出后归档」：按 `created_at` 导出年度日志并清理
   （`DELETE FROM operation_logs WHERE created_at < '2026-01-01'`）
 
+### 3.2.2 WorkBuddy 应用发布沙箱（`*.app.workbuddy.host` 形态）— 2026-10 实测结论
+
+WorkBuddy「发布为应用」通道可把本项目发布成 `xxx.app.workbuddy.host` 形态的永久链接，
+机制上与用户参考的那个站一致（应用发布 + 云服务）。为此已落地：
+
+| 文件 | 作用 |
+|---|---|
+| `server/src/env.js` | 零依赖加载 `.env`（Node 内置 `process.loadEnvFile()`），解决沙箱不注入环境变量的问题 |
+| `server/scripts/build-publish.mjs` | 生成 `.publish/` 单目录发布产物：`package.json` + `src/` + `public/`(前端 dist) + `.env` |
+| `server/src/index.js` | 静态托管目录支持多候选：`WEB_DIST_DIR` → `<root>/public`（发布布局）→ `<root>/web/dist`（仓库布局） |
+
+本地已验证：`.publish/` 独立启动后 `/api/health` 返回 `{"driver":"postgres"}`、首页 200、登录成功。
+
+**但发布沙箱实测无法作为本项目的部署目标**：
+
+- 沙箱网络**出网受限**，进程内连接 Supabase 报
+  `Connection terminated due to connection timeout`（`pg-pool` 10s 超时），
+  服务因初始化 DB 失败而退出，端口不监听 → 平台判定 `SITES_START_FAILED`。
+- 沙箱设计前提就是「不提供数据库」，本项目的 FIFO 批次分配、库存冲销都依赖
+  跨语句事务与真实 Postgres 语义，无法在受限出网下工作。
+
+**结论：数据层 + 应用层都放 Railway/自建机 + Supabase；WorkBuddy 发布通道保留作为
+纯前端静态预览（前端 dist 单独发布）使用。** 不再尝试把后端发布到 WorkBuddy 沙箱。
+
+> 复现命令：`cd server && DATABASE_URL=... JWT_SECRET=... node scripts/build-publish.mjs`
+
 ### 3.3 自有服务器（VPS / 云主机，Docker 一条命令）
 
 ```bash
