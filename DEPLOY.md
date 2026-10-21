@@ -31,6 +31,11 @@
 2. SQL Editor → New query → 粘贴 `server/schema.pg.sql` 全文 → **Run**（14 张表建好即可，重复执行安全）
 3. Project Settings → Database → Connection string → **URI** → 复制（形如 `postgresql://postgres.xxx:密码@aws-0-xxx.pool.supabase.com:5432/postgres`）
 
+> ⚠️ **连接串务必用 "Connection pooler" 下的 Session 模式（端口 5432），不要用 Transaction 模式(6543)**：
+> 本系统使用显式事务（BEGIN/COMMIT），Transaction 模式会把事务语句分散到不同后端连接导致事务失效。
+> 直接点数据库密码附近的「URI」标签复制即可，host 不用自己拼。
+> 直连地址（`db.xxx.supabase.co`）仅 IPv6，Render 部署请用 pooler 地址。
+
 **第 2 步 · 传代码（2 分钟）**
 ```bash
 git init && git add . && git commit -m "feat: 可独立部署版本"

@@ -56,6 +56,10 @@ export async function initDb() {
 
   if (driverName === 'postgres') {
     if (!url) throw new Error('DB_DRIVER=postgres 时必须提供 DATABASE_URL');
+    // Supabase 事务模式池(6543)会把同一事务的语句分散到不同后端连接，导致 BEGIN/COMMIT 失效
+    if (/:6543\b/.test(url)) {
+      console.warn('[db] ⚠️ 检测到 Transaction 模式池化端口 6543：本系统使用显式事务，建议改用 Session 模式(5432)');
+    }
     drv = createPostgresDriver({
       connectionString: url,
       ssl: process.env.PGSSL === 'false' ? false : true,
