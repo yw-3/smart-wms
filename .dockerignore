@@ -1,0 +1,22 @@
+# ===== Docker 构建上下文忽略（根目录）=====
+# 关键：Docker 只读取【构建上下文根目录】的 .dockerignore。
+# 部署配置里 dockerContext = 仓库根，因此本文件必须放在根目录才生效。
+# 作用：避免把 node_modules（数百 MB）、本地数据库、构建产物传给构建器导致构建超时。
+
+**/node_modules
+**/.git
+**/dist
+**/.vite
+**/.env
+**/.env.local
+**/.env.*.local
+server/data
+tools/ffmpeg
+.workbuddy
+*.log
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.tsbuildinfo
+wms-deploy.zip
