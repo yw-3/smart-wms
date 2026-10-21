@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>智能物料管理系统</title>
+  <script>
+    // GitHub Pages 无服务端重定向能力：用 404.html 把任意路径转回 SPA 入口
+    // （保持查询串与 hash，避免丢失路由参数）
+    (function () {
+      var l = window.location;
+      var base = document.querySelector('meta[name="wms-base"]');
+      var prefix = base ? base.getAttribute('content') : '/';
+      var target = prefix + 'index.html' + l.search + l.hash;
+      l.replace(target);
+    })();
+  </script>
+</head>
+<body>
+  <p>正在进入系统…如果停留在此页，请点击 <a href="./">首页</a>。</p>
+</body>
+</html>

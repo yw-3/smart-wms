@@ -1,0 +1,3 @@
+/*  SPA 路由回退：所有路径交给前端 index.html（Netlify / Cloudflare Pages 通用）  */
+/*    /login-bg.mp4  /login-bg.jpg  /assets/* 等真实文件会优先命中，无需额外规则  */
+/*    404.html 是 GitHub Pages 的回退页（见同目录 404.html）                    */

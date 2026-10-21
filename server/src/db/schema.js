@@ -1,0 +1,193 @@
+/**
+ * 建表 DDL（双驱动各一份）。
+ *
+ * - SCHEMA_SQLITE   本地开发 / 单机部署用（node:sqlite，零依赖）
+ * - SCHEMA_POSTGRES 生产部署用（Supabase / Railway / Render 的 Postgres）
+ *
+ * 两份 DDL 的表结构、列名、约束保持完全一致，业务 SQL 可在两者上通用。
+ * 差异仅在：自增主键写法（AUTOINCREMENT vs IDENTITY）与时间默认值函数。
+ */
+
+/* eslint-disable */
+export const SCHEMA_SQLITE = `
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  real_name TEXT,
+  role TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  failed_attempts INTEGER DEFAULT 0,
+  locked_until INTEGER DEFAULT 0,
+  must_change_pwd INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS suppliers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  contact TEXT,
+  phone TEXT,
+  address TEXT,
+  status TEXT DEFAULT 'active',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS locations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE NOT NULL,
+  name TEXT,
+  type TEXT,
+  description TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS units (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  main_unit TEXT NOT NULL,
+  sub_unit TEXT,
+  factor REAL,
+  note TEXT
+);
+
+CREATE TABLE IF NOT EXISTS materials (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  spec TEXT,
+  category TEXT,
+  remark TEXT,
+  barcode TEXT,
+  unit_main TEXT,
+  unit_sub TEXT,
+  unit_factor REAL,
+  abc_class TEXT DEFAULT 'C',
+  supplier_id INTEGER,
+  location_id INTEGER,
+  safety_stock REAL DEFAULT 0,
+  status TEXT DEFAULT 'active',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY(supplier_id) REFERENCES suppliers(id),
+  FOREIGN KEY(location_id) REFERENCES locations(id)
+);
+
+CREATE TABLE IF NOT EXISTS operation_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  username TEXT,
+  real_name TEXT,
+  action TEXT,
+  module TEXT,
+  detail TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS inbound_orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_no TEXT UNIQUE NOT NULL,
+  material_code TEXT NOT NULL,
+  material_name TEXT,
+  qty REAL NOT NULL,
+  batch_no TEXT,
+  prod_date TEXT,
+  expiry_date TEXT,
+  supplier_code TEXT,
+  quality_status TEXT DEFAULT '待检',
+  location_code TEXT,
+  operator_id INTEGER,
+  operator_name TEXT,
+  status TEXT DEFAULT '已提交',
+  remark TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS batch_inventory (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  material_code TEXT NOT NULL,
+  location_code TEXT NOT NULL,
+  batch_no TEXT NOT NULL,
+  qty REAL DEFAULT 0,
+  prod_date TEXT,
+  expiry_date TEXT,
+  supplier_code TEXT,
+  quality_status TEXT DEFAULT '待检',
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(material_code, location_code, batch_no)
+);
+
+CREATE TABLE IF NOT EXISTS stock (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  material_code TEXT NOT NULL,
+  location_code TEXT NOT NULL,
+  qty_total REAL DEFAULT 0,
+  qty_available REAL DEFAULT 0,
+  updated_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(material_code, location_code)
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  spec TEXT,
+  unit_main TEXT,
+  remark TEXT,
+  status TEXT DEFAULT 'active',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS bom (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_code TEXT NOT NULL,
+  component_code TEXT NOT NULL,
+  qty_per_unit REAL NOT NULL,
+  usage_unit TEXT,
+  remark TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(product_code, component_code)
+);
+
+CREATE TABLE IF NOT EXISTS production_lines (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  line_no INTEGER UNIQUE NOT NULL,
+  name TEXT,
+  line_location_code TEXT
+);
+
+CREATE TABLE IF NOT EXISTS requisition_orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_no TEXT UNIQUE NOT NULL,
+  line_no INTEGER,
+  operator_id INTEGER,
+  operator_name TEXT,
+  source_type TEXT DEFAULT 'BOM',
+  status TEXT DEFAULT '已提交',
+  remark TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS requisition_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  material_code TEXT NOT NULL,
+  material_name TEXT,
+  qty REAL NOT NULL,
+  batch_no TEXT,
+  prod_date TEXT,
+  expiry_date TEXT,
+  from_location_code TEXT,
+  to_location_code TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY(order_id) REFERENCES requisition_orders(id)
+);
+`;
+
+/* Postgres 版：自增主键用 IDENTITY，时间默认值用 to_char(now() AT TIME ZONE 'UTC', ...) */
+export const SCHEMA_POSTGRES = SCHEMA_SQLITE
+  .replace(/id INTEGER PRIMARY KEY AUTOINCREMENT/g, 'id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY')
+  .replace(/datetime\('now'\)/g, "to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')");

@@ -1,0 +1,16 @@
+{
+  "name": "wms-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "智能物料出入库管理系统 — React+AntD 前端 / Node+Express 后端 / SQLite 与 PostgreSQL 双驱动，可独立部署为公开站点",
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"npm --prefix server run dev\" \"npm --prefix web run dev\"",
+    "install:all": "npm install --prefix server && npm install --prefix web && npm install",
+    "build": "npm --prefix web run build",
+    "start:server": "npm --prefix server run start",
+    "smoke": "node server/scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

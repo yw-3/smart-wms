@@ -1,0 +1,20 @@
+# Netlify 部署配置（把 netlify.toml 放在仓库根目录，base 指向 web/）
+# 若在 Netlify 后台把 Base directory 设为 web，则可改用 web/ 目录下的等价配置。
+
+[build]
+  base = "web"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# 环境变量（后台 Site settings → Environment variables 设置）：
+#   VITE_API_BASE = https://你的后端域名/api
+#   VITE_BASE     = /            （GitHub Pages 子目录部署时才需要）
+
+# SPA 路由回退：所有路径交给 React Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
