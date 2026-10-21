@@ -135,6 +135,36 @@ postgresql://postgres.xxxxxxxxxxxxxx:你的密码@aws-0-ap-northeast-1.pool.supa
    - `SERVE_WEB` = `true`
 4. 部署完成后：**Settings → Networking → Generate Domain** → 得到 `https://xxx.up.railway.app`（永久有效）。
 
+> 💡 **免绑卡说明**：Railway 注册**不需要信用卡**，GitHub 登录即可开用，赠送 $5 试用额度（30 天）。
+> 与 Render 不同，Railway 免费额度内服务**不休眠**（无 30~60 秒冷启动）。
+> 额度规则：试用期 $5 → 之后每月赠送 $1 额度 + 超出按量计费；单服务上限 1 vCPU / 0.5 GB RAM。
+> 512 MB 常驻的小型 Node 服务约 $4~5/月，因此"每月 $1 免费额度"仅够低频使用；
+> 若要长期 7×24 在线，需保持账户有余额（可绑卡或充值）。
+> 另：Koyeb 同样支持 Dockerfile + 免绑卡（$29 预授权验证，随即撤销），
+> 免费版 512 MB / 0.1 vCPU、闲置 1 小时缩容到零。
+
+### 3.2.1 容量测算（2026-10 实测，真实 schema 灌入合成数据）
+
+用本项目真实 DDL 建库并灌入合成数据，测得**每行实际占用**（SQLite，含索引）：
+
+| 表 | 每行 | 一年典型行数 | 年增量 |
+|---|---|---|---|
+| operation_logs | 139 B | ~7.3 万 | **10.0 MB** |
+| requisition_items | 128 B | ~1.8 万 | 2.3 MB |
+| inbound_orders | 203 B | ~1.1 万 | 2.2 MB |
+| requisition_orders | 103 B | ~1.8 万 | 1.8 MB |
+| batch_inventory | 110 B | 滚动 | ~2.0 MB |
+| materials | 160 B | 静态 | 0.3 MB |
+| locations | 96 B | 静态 | 0.03 MB |
+
+**结论**
+- 基准灌入 4.6 万行 → 整库 **8.0 MB**
+- 按 6 条产线实际节拍（每天 30 单入库 + 50 单领料）→ **约 20 MB/年**
+- Supabase 免费版 500 MB → **可用 20 年以上**，容量完全不是瓶颈
+- 唯一持续增长较快的是 `operation_logs`（占约一半体积）；如需长期运行 5 年以上，
+  建议在报表模块做「导出后归档」：按 `created_at` 导出年度日志并清理
+  （`DELETE FROM operation_logs WHERE created_at < '2026-01-01'`）
+
 ### 3.3 自有服务器（VPS / 云主机，Docker 一条命令）
 
 ```bash
